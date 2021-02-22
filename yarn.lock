@@ -1081,6 +1081,11 @@ ws@^7.4.1:
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.3.tgz#1f9643de34a543b8edb124bdcbc457ae55a6e5cd"
   integrity sha512-hr6vCR76GsossIRsr8OLR9acVVm1jyfEWvhbNjtgPOrfvAlKzvyeg/P6r8RuDjRyrcQoPQT7K0DGEPc7Ae6jzA==
 
+xterm@4.4.0:
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/xterm/-/xterm-4.4.0.tgz#5915d3c4c8800fadbcf555a0a603c672ab9df589"
+  integrity sha512-JGIpigWM3EBWvnS3rtBuefkiToIILSK1HYMXy4BCsUpO+O4UeeV+/U1AdAXgCB6qJrnPNb7yLgBsVCQUNMteig==
+
 yallist@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"

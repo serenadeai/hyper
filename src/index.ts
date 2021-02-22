@@ -1,7 +1,10 @@
 import CommandHandler from "./command-handler";
 import IPC from "./shared/ipc";
+import { XtermController } from "./xterm-controller";
 
-export const onRendererWindow = (window: any) => {
+let xtermController: XtermController;
+
+export const onRendererWindow = (_window: any) => {
   let commandHandler: CommandHandler;
   let ipc: IPC;
 
@@ -13,36 +16,19 @@ export const onRendererWindow = (window: any) => {
     ipc.start();
   }
 
+  // setInterval(() => {
+  //   console.log("editorState source:", xtermController.command());
+  //   console.log("editorState selection:", xtermController.selection());
+  // }, 2000);
+
   // resetAndConnect();
 };
 
-export const middleware = () => (next: any) => (action: any) => {
-  console.log("middleware:", action);
-
-  next(action);
-};
-
-export const reduceUI = (state: any, action: any) => {
-  console.log("reduceUI:", state, action);
-  return state;
-}
-
-export const reduceSessions = (state: any, action: any) => {
-  console.log("reduceSessions:", state, action);
-  return state;
-}
-
-export const reduceTermGroups = (state: any, action: any) => {
-  console.log("reduceTermGroups:", state, action);
-  return state;
-}
-
-export const getTermProps = (uid: any, parentProps: any, props: any) => {
-  console.log("getTermProps:", uid, parentProps, props);
+export const getTermProps = (_uid: any, _parentProps: any, props: any) => {
+  // Create a new XtermController if the Terminal instance is new
+  if (props.term && (!xtermController || props.term != xtermController.term)) {
+    console.log("Adding handler")
+    xtermController = new XtermController(props.term);
+  }
   return props;
-}
-
-export const mapHyperState = (state: any, map: any) => {
-  console.log("mapHyperState:", state, map);
-  return map;
 }
