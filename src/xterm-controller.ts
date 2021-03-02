@@ -1,4 +1,12 @@
 import { Terminal } from "xterm";
+import { cursorMove } from "ansi-escapes";
+
+const debug = false;
+const log = (...args: any[]) => {
+  if (debug) {
+    console.log(...args);
+  }
+};
 
 /*
     Controls Xterm.js's representation of the underlying terminal using
@@ -7,6 +15,8 @@ import { Terminal } from "xterm";
 
 export class XtermController {
   private preCommandBuffer: string[] = [];
+  private command: string = "";
+  private cursor: number = 0;
 
   constructor(public term?: Terminal) {
     if (term) {
@@ -24,67 +34,101 @@ export class XtermController {
     this.term?.parser.registerOscHandler(133, (data) => {
       switch (data[0]) {
         case "A":
-          console.log("Prompt started");
+          log("Prompt started");
           break;
         case "B":
-          console.log("Command start");
+          log("Command start");
           this.savePreviousState();
           break;
         case "C":
-          console.log("Command executed");
-          console.log(this.diffBuffer());
+          log("Command executed");
           this.savePreviousState();
           break;
         case "D":
-          console.log("Command finished");
-          console.log(this.diffBuffer());
+          log("Command finished");
+          this.savePreviousState();
           break;
         default:
-          console.log("Unknown code", data);
+          console.warn("Unknown code", data);
       }
 
       return true;
     });
   }
 
-  command = () => {
-    return this.diffBuffer();
+  state = () => {
+    this.updateState();
+    return {
+      source: this.command,
+      cursor: this.cursor,
+    };
   };
 
-  selection = () => {
-    return null;
+  adjustCursor = (cursor: number) => {
+    this.updateState();
+    console.log("adjusting", cursor - this.cursor);
+    this.term?.write(cursorMove(cursor - this.cursor));
   };
 
-  private printBuffer = () => {
-    for (let i = 0; i < this.term!.buffer.length; i++) {
-      console.log(this.term!.buffer.getLine(i)?.translateToString() || "");
+  erase = (count: number) => {
+    if (count) {
+      this.term?.write("\u001B[" + count + "\b");
     }
   };
 
-  private diffBuffer = () => {
+  write = (diff: string) => {
+    this.term?.write(diff);
+  };
+
+  private updateState = () => {
     let command = "";
+    let cursor = 0;
 
+    const count = (substring: string, y: number, offset: number = 0) => {
+      // Ignore empty lines
+      if (substring === "") {
+        return;
+      }
+
+      command += substring + "\n";
+      // If we haven't reached the row of the cursor, add the length of the substring
+      if (y < this.term!.buffer.cursorY) {
+        cursor += substring.length + 1;
+      }
+
+      // If we're on the row of the cursor, add up to the column of the cursor, minus the offset
+      if (y === this.term!.buffer.cursorY) {
+        cursor += this.term!.buffer.cursorX - offset;
+      }
+    };
+
+    // Look at every row in the buffer
     for (let i = 0; i < this.term!.buffer.length; i++) {
-      const currentLine = this.term!.buffer.getLine(i)?.translateToString() || "";
+      const currentLine = this.term!.buffer.getLine(i)?.translateToString().trimRight() || "";
+      // If this line is the same as before, skip
+      if (currentLine === this.preCommandBuffer[i]) {
+        continue;
+      }
 
-      if (currentLine !== this.preCommandBuffer[i]) {
-        if (this.preCommandBuffer[i]) {
-          for (let j = 0; j < this.preCommandBuffer[i].length; j++) {
-            if (
-              currentLine[j] !== this.preCommandBuffer[i][j] &&
-              currentLine.substring(j).trimRight()
-            ) {
-              command += currentLine.substring(j).trimRight() + "\n";
-              break;
-            }
+      let substring = currentLine;
+      let offset = 0;
+
+      // Compare to the previous buffer to get a substring and offset
+      if (this.preCommandBuffer[i]) {
+        for (let j = 0; j < this.preCommandBuffer[i].length; j++) {
+          if (currentLine[j] !== this.preCommandBuffer[i][j]) {
+            substring = currentLine.substring(j);
+            offset = j;
+            break;
           }
-        } else if (currentLine.trimRight()) {
-          command += currentLine.trimRight() + "\n";
         }
       }
+
+      count(substring, i, offset);
     }
 
-    return command;
+    this.command = command;
+    this.cursor = cursor;
   };
 
   private savePreviousState = () => {
