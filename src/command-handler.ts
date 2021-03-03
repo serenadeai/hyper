@@ -44,23 +44,23 @@ export class CommandHandler {
         ? data.deleteEnd
         : data.cursor;
     console.log("cursor", cursor);
-    this.xtermController.adjustCursor(cursor);
+    // this.xtermController.adjustCursor(cursor);
 
     // Send backspaces once the cursor is adjusted
     console.log("erase", data.deleteEnd - data.deleteStart);
-    this.xtermController.erase(data.deleteEnd - data.deleteStart);
+    // this.xtermController.erase(data.deleteEnd - data.deleteStart);
 
     // Send actual diff
     console.log("diff", data.insertDiff);
-    this.xtermController.write(data.insertDiff.trimRight());
+    // this.xtermController.write(data.insertDiff.trimRight());
 
     return Promise.resolve({
-      // message: "applyDiff",
-      // data: {
-      //   adjustCursor: 0,
-      //   deleteCount: 0,
-      //   text: data.insertDiff.trimRight(),
-      // },
+      message: "applyDiff",
+      data: {
+        adjustCursor: cursor - this.xtermController.state().cursor,
+        deleteCount: data.deleteEnd - data.deleteStart,
+        text: data.insertDiff.trimRight(),
+      },
     });
   }
 }
