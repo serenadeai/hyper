@@ -122,7 +122,23 @@ const longCommandWithCursor: TerminalTestCase = {
   expectedCursor: 2,
 };
 
-describe("editor state", function () {
+const longCommandCancelled: TerminalTestCase = {
+  buffer: [
+    "> ls -al                         \n",
+    "  a b c                          \n",
+    "> echo TERMINAL                  \n",
+    "> ls /Users/cheng/Library/Applica\n",
+    "tions                            \n",
+    ">                                \n",
+    "                                 \n",
+  ],
+  cursorY: 5,
+  cursorX: 2,
+  expectedSource: "",
+  expectedCursor: 0,
+};
+
+describe("editor state", () => {
   // Sets blank values
   const term = new Terminal([], 0, 0);
   const xtermController = new XtermController(
@@ -154,7 +170,7 @@ describe("editor state", function () {
   };
 
   // Start of new prompt
-  it("new terminal", function () {
+  it("new terminal", () => {
     startPrompt();
     updateBuffer(newTerminal);
     endPrompt();
@@ -162,13 +178,13 @@ describe("editor state", function () {
   });
 
   // Command before execution
-  it("first command", function () {
+  it("first command", () => {
     updateBuffer(firstCommand);
     assertState(firstCommand);
   });
 
   // Start of new prompt after execution
-  it("finished command", function () {
+  it("finished command", () => {
     startOutput();
     updateBuffer(finishedCommand);
     endOutput();
@@ -179,7 +195,7 @@ describe("editor state", function () {
   });
 
   // New command after execution
-  it("new command", function () {
+  it("new command", () => {
     updateBuffer(newCommand);
     assertState(newCommand);
 
@@ -193,14 +209,23 @@ describe("editor state", function () {
   });
 
   // Long command
-  it("long command", function () {
+  it("long command", () => {
     updateBuffer(longCommand);
     assertState(longCommand);
   });
 
   // Moving the cursor
-  it("long command with cursor", function () {
+  it("long command with cursor", () => {
     updateBuffer(longCommandWithCursor);
     assertState(longCommandWithCursor);
+  });
+
+  // Cancelled command
+  it("long command cancelled", () => {
+    updateBuffer(longCommandCancelled);
+    startPrompt();
+    endPrompt();
+
+    assertState(longCommandCancelled);
   });
 });

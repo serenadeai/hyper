@@ -16,10 +16,6 @@ export const onRendererWindow = (_window: any) => {
     ipc.start();
   }
 
-  setInterval(() => {
-    console.log("editorState:", xtermController.state());
-  }, 2000);
-
   resetAndConnect();
 };
 

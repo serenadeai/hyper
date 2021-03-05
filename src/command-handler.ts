@@ -35,31 +35,46 @@ export class CommandHandler {
   }
 
   async COMMAND_TYPE_DIFF(data: any): Promise<any> {
+    // Adjust diff to not include a trailing newline
+    let text = data.insertDiff;
+    if (text.endsWith("\n")) {
+      text = text.substring(0, text.length - 1);
+    }
+
     // Adjust cursor
-    const cursor =
+    const newCursor =
       (data.deleteEnd !== undefined &&
         data.deleteStart !== undefined &&
         data.deleteEnd - data.deleteStart !== 0) ||
       (data.insertDiff !== undefined && data.insertDiff !== "")
         ? data.deleteEnd
         : data.cursor;
-    console.log("cursor", cursor);
+
+    // Adjust cursor
+    // console.log("setting cursor to", cursor);
     // this.xtermController.adjustCursor(cursor);
 
     // Send backspaces once the cursor is adjusted
-    console.log("erase", data.deleteEnd - data.deleteStart);
+    // console.log("erasing by", data.deleteEnd - data.deleteStart);
     // this.xtermController.erase(data.deleteEnd - data.deleteStart);
 
     // Send actual diff
-    console.log("diff", data.insertDiff);
-    // this.xtermController.write(data.insertDiff.trimRight());
+    // console.log("writing diff", text);
+    // this.xtermController.write(text);
 
+    const { source, cursor } = this.xtermController.state();
+    console.log("source", source, "cursor", cursor);
+    const adjustCursor = newCursor - cursor;
+    console.log("adjusting cursor to", adjustCursor);
+    const deleteCount = data.deleteEnd - data.deleteStart;
+    console.log("erasing by", deleteCount);
+    console.log("writing diff", text);
     return Promise.resolve({
       message: "applyDiff",
       data: {
-        adjustCursor: cursor - this.xtermController.state().cursor,
-        deleteCount: data.deleteEnd - data.deleteStart,
-        text: data.insertDiff.trimRight(),
+        adjustCursor,
+        deleteCount,
+        text,
       },
     });
   }

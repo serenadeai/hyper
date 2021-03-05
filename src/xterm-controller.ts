@@ -64,9 +64,9 @@ export class XtermController {
     };
   };
 
-  adjustCursor = (cursor: number) => {
+  setCursor = (cursor: number) => {
     this.updateState();
-    console.log("adjusting", cursor - this.cursor);
+    log("adjusting cursor by", cursor - this.cursor);
     this.term?.write(cursorMove(cursor - this.cursor));
   };
 
