@@ -36,9 +36,8 @@ export class XtermController {
       if (!this.clearedState) {
         this.savePreviousState();
         this.clearedState = true;
+        log("state", this.state());
       }
-
-      log("state", this.state());
     });
   }
 
@@ -97,6 +96,10 @@ export class XtermController {
   };
 
   private updateState = () => {
+    if (this.term === undefined) {
+      return;
+    }
+
     let command = "";
     let cursor = 0;
 
