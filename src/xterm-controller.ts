@@ -1,7 +1,7 @@
 import { Terminal } from "xterm";
 import { cursorMove } from "ansi-escapes";
 
-const debug = true;
+const debug = false;
 const log = (...args: any[]) => {
   if (debug) {
     console.log(...args);
@@ -18,6 +18,8 @@ export class XtermController {
   private command: string = "";
   private cursor: number = 0;
 
+  private clearedState = true;
+
   constructor(public term?: Terminal) {
     if (term) {
       this.updateTerm(term);
@@ -27,27 +29,40 @@ export class XtermController {
   updateTerm(term: Terminal) {
     this.term = term;
     // Register handlers.
-    this.registerHandlers();
+    this.registerHandlers(term);
+    term.onRender(() => {
+      log("onRender", "clearedState", this.clearedState);
+
+      if (!this.clearedState) {
+        this.savePreviousState();
+        this.clearedState = true;
+      }
+
+      log("state", this.state());
+    });
   }
 
-  private registerHandlers() {
-    this.term?.parser.registerOscHandler(133, (data) => {
-      console.log(data);
+  private registerHandlers(term: Terminal) {
+    term.parser.registerOscHandler(133, (data) => {
       switch (data[0]) {
         case "A":
-          log("Prompt started", this.state());
+          log("Prompt started");
           break;
         case "B":
-          log("Command start", this.state());
-          this.savePreviousState();
+          log("Command start");
+          this.clearedState = false;
+          // this.savePreviousState();
+          log("state", this.state());
           break;
         case "C":
-          log("Command executed", this.state());
+          log("Command executed");
+          log("state", this.state());
           this.savePreviousState();
           break;
         case "D":
-          log("Command finished", this.state());
+          log("Command finished");
           this.savePreviousState();
+          log("state", this.state());
           break;
         default:
           console.warn("Unknown code", data);
