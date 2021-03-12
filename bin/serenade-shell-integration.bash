@@ -486,7 +486,6 @@ __iterm2_preexec() {
     then
       export PS1="$ITERM_ORIG_PS1"
     fi
-    iterm2_ran_preexec="yes"
 
     __bp_set_ret_value "$__iterm2_last_ret_value" "$__bp_last_argument_prev_command"
 }
@@ -495,14 +494,6 @@ __iterm2_preexec() {
 # add the FinalTerm A and B codes to locate the prompt.
 function __iterm2_prompt_command () {
     __iterm2_last_ret_value="$?"
-
-    # Work around a bug in CentOS 7.2 where preexec doesn't run if you press
-    # ^C while entering a command.
-    if [[ -z "${iterm2_ran_preexec:-}" ]]
-    then
-        __iterm2_preexec ""
-    fi
-    iterm2_ran_preexec=""
 
     # This is an iTerm2 addition to try to work around a problem in the
     # original preexec.bash.

@@ -90,6 +90,8 @@ The tests ensure that `XtermController` is able to read a command and cursor sta
 
 ## Installation
 
+### macOS
+
 1. Download `Hyper-3.1.0-canary.4.dmg` from https://github.com/vercel/hyper/releases/tag/v3.1.0-canary.4 and move `Hyper.app` to your Applications folder. You may need to allow it to be opened in macOS' Security & Privacy preferences pane.
 1. Download `serenade-shell-integration.{bash,zsh}` from https://github.com/serenadeai/serenade-hyper/tree/main/bin to your home directory, and add `source ~/serenade-shell-integration.{bash,zsh}` to `.{bash,zsh}rc`.
 1. In the menu bar for Hyper, use Hyper > Preferences to open the preferences file and change:
@@ -101,21 +103,48 @@ The tests ensure that `XtermController` is able to read a command and cursor sta
          // or `'canary'` for less polished but more frequent updates
          updateChannel: 'canary',
       ```
-   - towards the bottom, `localPlugins`:
+   - towards the bottom, `plugins`:
       ```
-      localPlugins: [
+      plugins: [
         "serenade-hyper"
       ],
       ```
+    - *This does not yet work since we have not published this package to npm.* Instead, follow steps in the Development section here.
 1. If the auto-updater runs before you change the config and downgrades Hyper back to 3.0.2, you will need to replace it in `/Applications` from `Hyper-3.1.0-canary.4.dmg` again, but the new config should take effect thereafter.
 
 ## Development
 
+### macOS
+
 1. Clone this repo, and run `ln -s <path-to-this-repository> ~/.hyper_plugins/local/serenade-hyper` to create a symlink.
 1. In `.{bash,zsh}rc`, change `source ~/serenade-shell-integration.{bash,zsh}` to point to the integration script in the `bin` directory of this repo.
 1. Run `yarn` to get dependencies, then `yarn watch` to build.
+1. Change Hyper's configuration to include:
+    - towards the bottom, `localPlugins`:
+    ```
+    localPlugins: [
+      "serenade-hyper"
+    ],
+    ```
 1. After a rebuild, close any existing Hyper windows, use `command + N` to open a new window (which ensures that the new version of this plugin is loaded and initialized)
 1. Optionally use `command + option + I` to open Hyper's developer tools, which should show `Plugin serenade-hyper (0.0.1) loaded.` along with any messages from the plugin.
+
+### Windows
+
+1. Build Hyper 3.1.0-canary.4 from source at https://github.com/vercel/hyper/tree/3.1.0-canary.4 by following the instructions in the README.
+1. Change the config to:
+  ```
+  shell: 'C:\\Program Files\\Git\\git-cmd.exe',
+  ...
+  shellArgs: ['--command=usr/bin/bash.exe', '-l', '-i'],
+  ...
+  localPlugins: [
+    "serenade-hyper"
+  ],
+  ```
+1. Clone this repo to `~\AppData\Roaming\Hyper\.hyper_plugins\local\serenade-hyper`. `AppData` is a hidden folder.
+1. Ensure that `~/.bashrc` has `source ~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/bin/serenade-shell-integration.bash`.
+1. Since symlinks may not work on Windows, also clone `https://github.com/serenadeai/editor-shared` and replace the `src/shared` symlink here with the contents of `editor-shared/src`.
 
 ## Current limitations
 

@@ -1,7 +1,7 @@
 import { Terminal } from "xterm";
 import { cursorMove } from "ansi-escapes";
 
-const debug = false;
+const debug = true;
 const log = (...args: any[]) => {
   if (debug) {
     console.log(...args);
@@ -32,20 +32,21 @@ export class XtermController {
 
   private registerHandlers() {
     this.term?.parser.registerOscHandler(133, (data) => {
+      console.log(data);
       switch (data[0]) {
         case "A":
-          log("Prompt started");
+          log("Prompt started", this.state());
           break;
         case "B":
-          log("Command start");
+          log("Command start", this.state());
           this.savePreviousState();
           break;
         case "C":
-          log("Command executed");
+          log("Command executed", this.state());
           this.savePreviousState();
           break;
         case "D":
-          log("Command finished");
+          log("Command finished", this.state());
           this.savePreviousState();
           break;
         default:
