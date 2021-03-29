@@ -13,6 +13,9 @@ export class CommandHandler {
   // We can use the extension's IPC to send messages back to the client if needed
   ipc?: IPC;
 
+  undoIndex: number = 0;
+  commandStack: any[] = [];
+
   constructor(private xtermController: XtermController) {}
 
   setIPC(ipc: IPC) {
@@ -34,7 +37,10 @@ export class CommandHandler {
     });
   }
 
-  async COMMAND_TYPE_DIFF(data: any): Promise<any> {
+  async COMMAND_TYPE_DIFF(data: any, commandType: string = ""): Promise<any> {
+    const { source, cursor } = this.xtermController.state();
+    // console.log("source", source, "cursor", cursor);
+
     // Adjust diff to not include a trailing newline
     let text = data.insertDiff;
     if (text.endsWith("\n")) {
@@ -42,41 +48,72 @@ export class CommandHandler {
     }
 
     // Adjust cursor
-    const newCursor =
-      (data.deleteEnd !== undefined &&
-        data.deleteStart !== undefined &&
-        data.deleteEnd - data.deleteStart !== 0) ||
-      (data.insertDiff !== undefined && data.insertDiff !== "")
-        ? data.deleteEnd
-        : data.cursor;
+    const isDelete =
+      data.deleteEnd !== undefined &&
+      data.deleteStart !== undefined &&
+      data.deleteEnd - data.deleteStart !== 0;
+    const newCursor = isDelete ? data.deleteEnd : data.cursor;
+    let deleteCount = isDelete ? data.deleteEnd - data.deleteStart : 0;
+    let adjustCursor = newCursor - cursor;
 
-    // Adjust cursor
-    // console.log("setting cursor to", cursor);
-    // this.xtermController.adjustCursor(cursor);
+    if (commandType == "undo") {
+      // For undo commands, manually calculate the adjustments to the cursor, and deletes or inserts
+      deleteCount = data.insertDiff?.length || 0;
+      if (isDelete) {
+        adjustCursor = data.deleteStart - cursor + deleteCount;
+      } else {
+        adjustCursor = data.prevCursor - cursor + deleteCount;
+      }
+      text = data.deleted;
+    } else if (commandType == "redo") {
+      // No action is needed for redo commands since the original command is passed in again
+    } else {
+      // Otherwise, append the original command (with additional data about the current state) to the
+      // command stack so we can undo it later
+      data.prevCursor = cursor;
+      if (isDelete) {
+        // console.log("deleting", source, data.deleteEnd, data.deleteStart);
+        data.deleted = source.substring(data.deleteStart, data.deleteEnd);
+      }
+      this.commandStack = this.commandStack.slice(0, this.undoIndex);
+      this.commandStack.push(data);
+      this.undoIndex += 1;
+    }
 
-    // Send backspaces once the cursor is adjusted
-    // console.log("erasing by", data.deleteEnd - data.deleteStart);
-    // this.xtermController.erase(data.deleteEnd - data.deleteStart);
-
-    // Send actual diff
+    // console.log("adjusting cursor to", adjustCursor);
+    // console.log("erasing by", deleteCount);
     // console.log("writing diff", text);
-    // this.xtermController.write(text);
-
-    const { source, cursor } = this.xtermController.state();
-    console.log("source", source, "cursor", cursor);
-    const adjustCursor = newCursor - cursor;
-    console.log("adjusting cursor to", adjustCursor);
-    const deleteCount = data.deleteEnd - data.deleteStart;
-    console.log("erasing by", deleteCount);
-    console.log("writing diff", text);
     return Promise.resolve({
       message: "applyDiff",
       data: {
         adjustCursor,
         deleteCount,
         text,
+        skipBackspace: true,
       },
     });
+  }
+
+  async COMMAND_TYPE_UNDO(_data: any): Promise<any> {
+    this.undoIndex -= 1;
+    if (this.undoIndex < 0) {
+      this.undoIndex = 0;
+      return;
+    }
+
+    const undo_command = this.commandStack[this.undoIndex];
+    return this.COMMAND_TYPE_DIFF(undo_command, "undo");
+  }
+
+  async COMMAND_TYPE_REDO(_data: any): Promise<any> {
+    this.undoIndex += 1;
+    if (this.undoIndex > this.commandStack.length) {
+      this.undoIndex = this.commandStack.length;
+      return;
+    }
+
+    const redo_command = this.commandStack[this.undoIndex - 1];
+    return this.COMMAND_TYPE_DIFF(redo_command, "redo");
   }
 }
 

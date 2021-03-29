@@ -164,3 +164,9 @@ The tests ensure that `XtermController` is able to read a command and cursor sta
     'editor:break': 'esc'
   },
 ```
+
+## Supported commands
+
+- Add/change/delete
+- Go to
+- Undo/redo
