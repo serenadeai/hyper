@@ -15,6 +15,7 @@ export class CommandHandler {
 
   undoIndex: number = 0;
   commandStack: any[] = [];
+  lastCommandWasUse: boolean = false;
 
   constructor(private xtermController: XtermController) {}
 
@@ -75,14 +76,32 @@ export class CommandHandler {
         // console.log("deleting", source, data.deleteEnd, data.deleteStart);
         data.deleted = source.substring(data.deleteStart, data.deleteEnd);
       }
-      this.commandStack = this.commandStack.slice(0, this.undoIndex);
+      // If it's a use command, push this as the last valid command
+      if (this.lastCommandWasUse) {
+        // Remember the original command's deleted text
+        data.deleted = this.commandStack[this.undoIndex - 1].deleted;
+        this.commandStack = this.commandStack.slice(0, this.undoIndex - 1);
+        this.undoIndex -= 1;
+      } else {
+        // Otherwise, ensure it's the last command in the stack
+        this.commandStack = this.commandStack.slice(0, this.undoIndex);
+      }
+
       this.commandStack.push(data);
       this.undoIndex += 1;
+    }
+
+    // Don't delete anything if it's a use command, since the client will do it for us immediately.
+    if (this.lastCommandWasUse) {
+      adjustCursor = 0;
+      deleteCount = 0;
     }
 
     // console.log("adjusting cursor to", adjustCursor);
     // console.log("erasing by", deleteCount);
     // console.log("writing diff", text);
+
+    this.lastCommandWasUse = false;
     return Promise.resolve({
       message: "applyDiff",
       data: {
@@ -114,6 +133,13 @@ export class CommandHandler {
 
     const redo_command = this.commandStack[this.undoIndex - 1];
     return this.COMMAND_TYPE_DIFF(redo_command, "redo");
+  }
+
+  async COMMAND_TYPE_USE(_data: any): Promise<any> {
+    this.lastCommandWasUse = true;
+    return Promise.resolve({
+      message: "completed",
+    });
   }
 }
 
