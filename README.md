@@ -14,6 +14,7 @@
 ### Windows
 
 1. Download and run `Hyper Setup 3.1.1-serenade.exe` from https://github.com/serenadeai/serenade-hyper/releases.
+    - This version is necessary since it includes an updated version of xterm.js.
 1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
 1. You will likely need to change Hyper's configuration file to point to your shell with Edit > Preferences. The default configuration file will have examples in the comments above the `shell` entry. For example, Git Bash will require the following:
     ```
@@ -21,6 +22,15 @@
     ```
 1. From your shell, run `~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/install.sh`.
    - Alternatively, you can run `cat ~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/install.sh` to see the commands in the script and run them manually.
+1. Restart Hyper to load the plugin and shell integration.
+
+### Linux
+
+1. Download and install `Hyper Setup 3.1.1-serenade.AppImage` from https://github.com/serenadeai/serenade-hyper/releases.
+   - This version is necessary since it includes an updated version of xterm.js.
+1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
+1. From your shell, run `~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to automatically add the shell integration to your shell profile.
+   - Alternatively, you can run `cat ~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to see the commands in the script and run them manually.
 1. Restart Hyper to load the plugin and shell integration.
 
 ## Development
