@@ -59,6 +59,11 @@
 1. Run `yarn` to get dependencies, then `yarn watch` to build.`
 1. Optionally, run `rm -rf ~/AppData/Roaming/Hyper/` to remove previously installed configuration and plugins.
 
+## Release
+
+1. Update the version number in `package.json`.
+1. Run `npm publish` with a valid auth token in `~/.npmrc`.
+
 ## Design
 
 ### Terminal, tty, shell
