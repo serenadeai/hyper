@@ -6,6 +6,13 @@
 
 1. Download `Hyper-3.1.1-serenade.dmg` from https://github.com/serenadeai/serenade-hyper/releases and move `Hyper.app` to your Applications folder.
     - This version is necessary since it includes an updated version of xterm.js.
+    - If you already have a version of Hyper installed, you'll need to update your configuration to include:
+      ```
+      plugins: [
+         ...
+        'serenade-hyper'
+      ],
+      ```
 1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
 1. From your shell, run `~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to automatically add the shell integration to your shell profile.
     - Alternatively, you can run `cat ~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to see the commands in the script and run them manually.

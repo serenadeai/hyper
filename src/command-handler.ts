@@ -53,7 +53,7 @@ export class CommandHandler {
       data.deleteEnd !== undefined &&
       data.deleteStart !== undefined &&
       data.deleteEnd - data.deleteStart !== 0;
-    const newCursor = isDelete ? data.deleteEnd : data.cursor;
+    const newCursor = isDelete ? data.deleteEnd : text ? cursor : data.cursor;
     let deleteCount = isDelete ? data.deleteEnd - data.deleteStart : 0;
     let adjustCursor = newCursor - cursor;
 
@@ -75,6 +75,9 @@ export class CommandHandler {
       if (isDelete) {
         // console.log("deleting", source, data.deleteEnd, data.deleteStart);
         data.deleted = source.substring(data.deleteStart, data.deleteEnd);
+        if (data.deleted.endsWith("\n")) {
+          data.deleted = data.deleted.substring(0, data.deleted.length - 1);
+        }
       }
       // If it's a use command, push this as the last valid command
       if (this.lastCommandWasUse) {
