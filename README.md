@@ -5,10 +5,10 @@
 ### macOS
 
 1. Download `Hyper-3.1.1-serenade.dmg` from https://github.com/serenadeai/serenade-hyper/releases and move `Hyper.app` to your Applications folder.
-   - This version is necessary since it includes an updated version of xterm.js.
+    - This version is necessary since it includes an updated version of xterm.js.
 1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
 1. From your shell, run `~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to automatically add the shell integration to your shell profile.
-   - Alternatively, you can run `cat ~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to see the commands in the script and run them manually.
+    - Alternatively, you can run `cat ~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to see the commands in the script and run them manually.
 1. Restart Hyper to load the plugin and shell integration.
 
 ### Windows
@@ -16,9 +16,9 @@
 1. Download and run `Hyper Setup 3.1.1-serenade.exe` from https://github.com/serenadeai/serenade-hyper/releases.
 1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
 1. You will likely need to change Hyper's configuration file to point to your shell with Edit > Preferences. The default configuration file will have examples in the comments above the `shell` entry. For example, Git Bash will require the following:
-  ```
-  shell: 'C:\\Program Files\\Git\\bin\\bash.exe',
-  ```
+    ```
+    shell: 'C:\\Program Files\\Git\\bin\\bash.exe',
+    ```
 1. From your shell, run `~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/install.sh`.
    - Alternatively, you can run `cat ~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/install.sh` to see the commands in the script and run them manually.
 1. Restart Hyper to load the plugin and shell integration.
@@ -32,11 +32,11 @@
 1. Run `yarn` to get dependencies, then `yarn watch` to build.
 1. Change Hyper's configuration with:
     - towards the bottom, `localPlugins`:
-    ```
-    localPlugins: [
-      "serenade-hyper"
-    ],
-    ```
+       ```
+       localPlugins: [
+         "serenade-hyper"
+       ],
+       ```
 1. After a rebuild, close any existing Hyper windows, use `command + N` to open a new window (which ensures that the new version of this plugin is loaded and initialized)
 1. Optionally, use `command + option + I` to open Hyper's developer tools, which should show `Plugin serenade-hyper (0.0.1) loaded.` along with any messages from the plugin.
 1. Optionally, run `rm -rf ~/.hyper.js ~/.hyper_plugins/` to remove previously installed configuration and plugins.
