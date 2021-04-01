@@ -9,8 +9,12 @@ export default class XtermController {
   private terminal: any;
   private updateOnRender: boolean = false;
 
+  private buffer() {
+    return this.terminal.buffer.active ? this.terminal.buffer.active : this.terminal.buffer;
+  }
+
   private getActiveLine(): string {
-    const buffer = this.terminal.buffer.active;
+    const buffer = this.buffer();
     let i = this.getActiveLineNumber();
     let line = buffer.getLine(i).translateToString().trimRight();
     while (i > 0 && buffer.getLine(i).isWrapped) {
@@ -22,7 +26,7 @@ export default class XtermController {
   }
 
   private getActiveLineNumber(): number {
-    const buffer = this.terminal.buffer.active;
+    const buffer = this.buffer();
     for (let i = buffer.length - 1; i >= 0; i--) {
       if (
         buffer.getLine(i).isWrapped ||
@@ -38,7 +42,7 @@ export default class XtermController {
   private updatePrompt() {
     this.prompt = {
       prefix: this.getActiveLine(),
-      offsetLeft: this.terminal.buffer.active.cursorX,
+      offsetLeft: this.buffer().cursorX,
       bufferIndex: this.getActiveLineNumber(),
     };
   }
@@ -74,7 +78,7 @@ export default class XtermController {
       source: this.getActiveLine().substring(this.prompt.offsetLeft),
       cursor:
         this.terminal.cols * (this.getActiveLineNumber() - this.prompt.bufferIndex) +
-        this.terminal.buffer.active.cursorX -
+        this.buffer().cursorX -
         this.prompt.offsetLeft,
     };
   }
