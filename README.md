@@ -7,6 +7,12 @@
 1. Launch Hyper, then use the menu item Plugins > Update to automatically download the Serenade plugin.
 1. Restart Hyper to make sure Serenade is loaded.
 
+### Windows
+
+On Windows, you might want to change Hyper's configuration file to point to your shell with Edit > Preferences. The default configuration file will have examples in the comments above the `shell` entry. For example, to use Git Bash as you shell, you can do:
+
+    shell: 'C:\\Program Files\\Git\\bin\\bash.exe'
+
 ## Development
 
 ### macOS

@@ -18,4 +18,12 @@ export default class CommandHandler {
       },
     });
   }
+
+  async COMMAND_TYPE_SCROLL(data: any): Promise<any> {
+    if (data.direction == "down") {
+      this.xtermController.scrollDown();
+    } else {
+      this.xtermController.scrollUp();
+    }
+  }
 }
