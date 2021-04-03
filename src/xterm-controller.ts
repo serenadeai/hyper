@@ -1,11 +1,12 @@
 interface Prompt {
   prefix: string;
   offsetLeft: number;
+  offsetRight: number;
   bufferIndex: number;
 }
 
 export default class XtermController {
-  private prompt: Prompt = { prefix: "", offsetLeft: 0, bufferIndex: 0 };
+  private prompt: Prompt = { prefix: "", offsetLeft: 0, offsetRight: 0, bufferIndex: 0 };
   private terminal: any;
   private uid: string;
   private updateOnRender: boolean = false;
@@ -96,9 +97,22 @@ export default class XtermController {
   private updatePrompt() {
     // keep track of the absolute horizontal and vertical offsets of the cursor, so we can
     // separate the command being entered from the shell prompt.
+    let offsetRight = 0;
+    const line = this.getActiveLine();
+    if (!this.buffer().getLine(this.getActiveLineNumber()).isWrapped) {
+      for (let i = line.length - 1; i >= 0; i--) {
+        if (line[i] != " ") {
+          offsetRight++;
+        } else {
+          break;
+        }
+      }
+    }
+
     this.prompt = {
-      prefix: this.getActiveLine(),
+      prefix: line,
       offsetLeft: this.buffer().cursorX,
+      offsetRight,
       bufferIndex: this.getActiveLineNumber(),
     };
   }
@@ -112,12 +126,20 @@ export default class XtermController {
   }
 
   state(): { source: string; cursor: number } {
+    let line = this.getActiveLine();
+    const index = this.getActiveLineNumber();
+    if (!this.buffer().getLine(index).isWrapped && this.prompt.offsetRight > 0) {
+      line = line.substring(0, line.length - this.prompt.offsetRight).trimRight();
+    }
+
     return {
-      source: this.getActiveLine().substring(this.prompt.offsetLeft),
-      cursor:
+      source: line.substring(this.prompt.offsetLeft),
+      cursor: Math.max(
+        0,
         this.terminal.cols * (this.getActiveLineNumber() - this.prompt.bufferIndex) +
-        this.buffer().cursorX -
-        this.prompt.offsetLeft,
+          this.buffer().cursorX -
+          this.prompt.offsetLeft
+      ),
     };
   }
 }

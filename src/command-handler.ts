@@ -4,22 +4,25 @@ import XtermController from "./xterm-controller";
 export default class CommandHandler {
   private xtermController?: XtermController;
 
-  async COMMAND_TYPE_GET_EDITOR_STATE(_data: any): Promise<any> {
-    if (!this.xtermController) {
-      return;
+  async COMMAND_TYPE_GET_EDITOR_STATE(data: any): Promise<any> {
+    if (!this.xtermController || data.limited) {
+      return {
+        message: "editorState",
+        data: {
+          filename: "hyper.sh",
+        },
+      };
     }
 
     const { source, cursor } = this.xtermController.state();
-    return Promise.resolve({
+    return {
       message: "editorState",
       data: {
         source,
         cursor,
         filename: "hyper.sh",
-        files: [],
-        roots: [],
       },
-    });
+    };
   }
 
   async COMMAND_TYPE_SCROLL(data: any): Promise<any> {
