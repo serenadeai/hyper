@@ -1,29 +1,33 @@
 import CommandHandler from "./command-handler";
 import IPC from "./shared/ipc";
-import { XtermController } from "./xterm-controller";
+import XtermController from "./xterm-controller";
 
-let xtermController = new XtermController();
+let ipc: IPC;
+let commandHandler: CommandHandler;
+let controllers: { [key: string]: XtermController } = {};
 
-export const onRendererWindow = (_window: any) => {
-  let commandHandler: CommandHandler;
-  let ipc: IPC;
-
-  function resetAndConnect() {
-    commandHandler = new CommandHandler(xtermController);
+export const getTermProps = (uid: string, _parentProps: any, props: any) => {
+  if (!ipc) {
+    commandHandler = new CommandHandler();
     ipc = new IPC(commandHandler, "hyper");
-    commandHandler.setIPC(ipc);
-
     ipc.start();
   }
 
-  resetAndConnect();
+  if (props.term && controllers[uid] === undefined) {
+    controllers[uid] = new XtermController(props.term, uid);
+    commandHandler.setXtermController(controllers[uid]);
+  }
+
+  return props;
 };
 
-export const getTermProps = (_uid: any, _parentProps: any, props: any) => {
-  // Update XtermController if the Terminal instance is new
-  if (props.term && props.term != xtermController.term) {
-    console.log("Updating Terminal in xtermController");
-    xtermController.updateTerm(props.term);
+export const middleware = (_store: any) => (next: any) => (action: any) => {
+  if (action.type == "SESSION_SET_ACTIVE" && action.uid) {
+    const controller = controllers[action.uid];
+    controller.screenWasCleared = true;
+    commandHandler.setXtermController(controller);
+    ipc.sendActive();
   }
-  return props;
+
+  next(action);
 };

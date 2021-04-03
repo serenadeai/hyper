@@ -2,74 +2,40 @@
 
 ## Installation
 
-### macOS
-
-1. Download `Hyper-3.1.1-serenade.dmg` from https://github.com/serenadeai/serenade-hyper/releases and move `Hyper.app` to your Applications folder.
-    - This version is necessary since it includes an updated version of xterm.js.
-    - If you already have a version of Hyper installed, you'll need to update your configuration to include:
-      ```
-      plugins: [
-         ...
-        'serenade-hyper'
-      ],
-      ```
-1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
-1. From your shell, run `~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to automatically add the shell integration to your shell profile.
-    - Alternatively, you can run `cat ~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to see the commands in the script and run them manually.
-1. Restart Hyper to load the plugin and shell integration.
+1. Download and install Hyper 3.1.1 from https://github.com/serenadeai/serenade-hyper/releases.
+    - This version of Hyper contains a newer version of xterm.js, and it will be released by the Hyper team soon! In the meantime, you can use the above builds.
+1. Launch Hyper, then use the menu item Plugins > Update to automatically download the Serenade plugin.
+1. Restart Hyper to make sure Serenade is loaded.
 
 ### Windows
 
-1. Download and run `Hyper Setup 3.1.1-serenade.exe` from https://github.com/serenadeai/serenade-hyper/releases.
-    - This version is necessary since it includes an updated version of xterm.js.
-1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
-1. You will likely need to change Hyper's configuration file to point to your shell with Edit > Preferences. The default configuration file will have examples in the comments above the `shell` entry. For example, Git Bash will require the following:
-    ```
-    shell: 'C:\\Program Files\\Git\\bin\\bash.exe',
-    ```
-1. From your shell, run `~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/install.sh`.
-   - Alternatively, you can run `cat ~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/install.sh` to see the commands in the script and run them manually.
-1. Restart Hyper to load the plugin and shell integration.
+On Windows, you might want to change Hyper's configuration file to point to your shell with Edit > Preferences. The default configuration file will have examples in the comments above the `shell` entry. For example, to use Git Bash as you shell, you can do:
 
-### Linux
-
-1. Download and install `Hyper Setup 3.1.1-serenade.AppImage` from https://github.com/serenadeai/serenade-hyper/releases.
-   - This version is necessary since it includes an updated version of xterm.js.
-1. Launch Hyper, and use the menu item Plugins > Update to automatically download the Serenade plugin.
-1. From your shell, run `~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to automatically add the shell integration to your shell profile.
-   - Alternatively, you can run `cat ~/.hyper_plugins/node_modules/serenade-hyper/install.sh` to see the commands in the script and run them manually.
-1. Restart Hyper to load the plugin and shell integration.
+    shell: 'C:\\Program Files\\Git\\bin\\bash.exe'
 
 ## Development
 
 ### macOS
 
-1. Clone this repo, and run `ln -s <path-to-this-repository> ~/.hyper_plugins/local/serenade-hyper` to create a symlink.
-1. In `.{bash,zsh}rc`, change `source ~/serenade-shell-integration.{bash,zsh}` to point to the integration script in the `bin` directory of this repo.
+1. Clone this repo, and run `ln -s <path-to-this-repository> ~/.hyper_plugins/local/hyper-serenade` to create a symlink.
 1. Run `yarn` to get dependencies, then `yarn watch` to build.
 1. Change Hyper's configuration with:
     - towards the bottom, `localPlugins`:
        ```
        localPlugins: [
-         "serenade-hyper"
+         "hyper-serenade"
        ],
        ```
 1. After a rebuild, close any existing Hyper windows, use `command + N` to open a new window (which ensures that the new version of this plugin is loaded and initialized)
-1. Optionally, use `command + option + I` to open Hyper's developer tools, which should show `Plugin serenade-hyper (0.0.1) loaded.` along with any messages from the plugin.
+1. Optionally, use `command + option + I` to open Hyper's developer tools, which should show `Plugin serenade-hyper (x.y.z) loaded.` along with any messages from the plugin.
 1. Optionally, run `rm -rf ~/.hyper.js ~/.hyper_plugins/` to remove previously installed configuration and plugins.
 
 ### Windows
 
 1. Clone this repo to `~\AppData\Roaming\Hyper\.hyper_plugins\local\serenade-hyper`. `AppData` is a hidden folder.
-1. Ensure that `~/.bashrc` has `source ~/AppData/Roaming/Hyper/.hyper_plugins/local/serenade-hyper/bin/serenade-shell-integration.bash`.
 1. Since symlinks may not work on Windows, also clone `https://github.com/serenadeai/editor-shared` and replace the `src/shared` symlink here with the contents of `editor-shared/src`.
 1. Run `yarn` to get dependencies, then `yarn watch` to build.`
 1. Optionally, run `rm -rf ~/AppData/Roaming/Hyper/` to remove previously installed configuration and plugins.
-
-## Release
-
-1. Update the version number in `package.json`.
-1. Run `npm publish` with a valid auth token in `~/.npmrc`.
 
 ## Design
 
@@ -102,22 +68,6 @@ With these tools and ideas, we can read and write data to the terminal with reas
 
 ### Implementation
 
-#### Shell integration
-
-In the `bin` directory, shell scripts based on [iTerm2's shell integration](https://iterm2.com/documentation-shell-integration.html) tells the shell to send additional escape codes that indicate the start and end of the prompt and output:
-
-```
-- A: Start of prompt
-- B: End of prompt (start of command)
-- C: End of command (start of output)
-- D: End of output
-
-    [A]prompt% [B] ls -l
-    [C]
-    -rw-r--r-- 1 user group 127 May 1 2016 filename
-    [D]
-```
-
 #### Layout
 
 Since Hyper is written in TypeScript and its plugins are in TypeScript as well, this plugin is able to use a [shared package](https://github.com/serenadeai/editor-shared) as its foundation for IPC with the desktop client and dispatching commands.
@@ -126,45 +76,8 @@ In `index.ts`, when a new Hyper window is launched, a new instance of the `Comma
 
 ##### CommandHandler
 
-`CommandHandler` currently supports two commands:
+`CommandHandler` currently supports:
 - `COMMAND_TYPE_GET_EDITOR_STATE`, which asks `XtermController` for the source (command) and cursor position
-- `COMMAND_TYPE_DIFF`, which determines the adjustments to the source and cursor needed, and responds to the client to perform some subset of moving the cursor, deleting a number of characters, and inserting additional characters
-
-##### XtermController
-
-`XtermController` handles determining the current state of a drafted command, i.e. the source text and cursor position. This is accomplished by reading the buffer whenever an escape code from the shell integration is detected (via handlers registered to the `Terminal` object) and producing a diff.
-
-For example, a line might be:
-```
-> 
-```
-
-and later:
-```
-> ls
-```
-
-and finally:
-```
-> ls -al
-```
-
-Since we receive an escape code from the shell only after the prompt is written, we know that the command is `ls` or `ls -al` by comparing the contents of the current line to the pre-command state. Similarly, we can calculate the position of the cursor relative to the command's start, even though the `Terminal` object only provides an `x` and `y` coordinate relative to the entire terminal window.
-
-The "canary" version of Hyper is required for Xterm.js 4.*, which provides support for reading the buffer directly.
-
-There are also some methods for writing data directly, though they seem to cause unintended behavior, so at this point the `CommandHandler` asks the client to send simulated keystrokes instead.
-
-##### Tests
-
-The tests ensure that `XtermController` is able to read a command and cursor state correctly, particularly when a long command wraps to the next line, or when a command is aborted without output.
-
-## Current limitations
-
-- Any text set by the shell onto the same line to the right of the prompt will be captured as part of the current command.
-- Multiple lines (as with a `\ `) are not supported. 
-- Full-screen apps like Vim are not supported.
-- SSH requires the shell integration to be installed on the remote server.
 
 ## Other issues
 
@@ -177,9 +90,3 @@ The tests ensure that `XtermController` is able to read a command and cursor sta
     'editor:break': 'esc'
   },
 ```
-
-## Supported commands
-
-- Add/change/delete
-- Go to
-- Undo/redo

@@ -1,159 +1,123 @@
-import { Terminal } from "xterm";
-import { cursorMove } from "ansi-escapes";
+interface Prompt {
+  prefix: string;
+  offsetLeft: number;
+  bufferIndex: number;
+}
 
-const debug = false;
-const log = (...args: any[]) => {
-  if (debug) {
-    console.log(...args);
-  }
-};
+export default class XtermController {
+  private prompt: Prompt = { prefix: "", offsetLeft: 0, bufferIndex: 0 };
+  private terminal: any;
+  private uid: string;
+  private updateOnRender: boolean = false;
 
-/*
-    Controls Xterm.js's representation of the underlying terminal using
-    escape codes and buffer diffs.
- */
+  screenWasCleared: boolean = false;
 
-export class XtermController {
-  private preCommandBuffer: string[] = [];
-  private command: string = "";
-  private cursor: number = 0;
+  constructor(terminal: any, uid: string) {
+    this.terminal = terminal;
+    this.uid = uid;
 
-  private clearedState = true;
-
-  constructor(public term?: Terminal) {
-    if (term) {
-      this.updateTerm(term);
-    }
-  }
-
-  updateTerm(term: Terminal) {
-    this.term = term;
-    // Register handlers.
-    this.registerHandlers(term);
-    term.onRender(() => {
-      log("onRender", "clearedState", this.clearedState);
-
-      if (!this.clearedState) {
-        this.savePreviousState();
-        this.clearedState = true;
-        log("state", this.state());
-      }
-    });
-  }
-
-  private registerHandlers(term: Terminal) {
-    term.parser.registerOscHandler(133, (data) => {
-      switch (data[0]) {
-        case "A":
-          log("Prompt started");
-          break;
-        case "B":
-          log("Command start");
-          this.clearedState = false;
-          // this.savePreviousState();
-          log("state", this.state());
-          break;
-        case "C":
-          log("Command executed");
-          log("state", this.state());
-          this.savePreviousState();
-          break;
-        case "D":
-          log("Command finished");
-          this.savePreviousState();
-          log("state", this.state());
-          break;
-        default:
-          console.warn("Unknown code", data);
-      }
-
-      return true;
-    });
-  }
-
-  state = () => {
-    this.updateState();
-    return {
-      source: this.command,
-      cursor: this.cursor,
-    };
-  };
-
-  setCursor = (cursor: number) => {
-    this.updateState();
-    log("adjusting cursor by", cursor - this.cursor);
-    this.term?.write(cursorMove(cursor - this.cursor));
-  };
-
-  erase = (count: number) => {
-    if (count) {
-      this.term?.write("\u001B[" + count + "\b");
-    }
-  };
-
-  write = (diff: string) => {
-    this.term?.write(diff);
-  };
-
-  private updateState = () => {
-    if (this.term === undefined) {
-      return;
-    }
-
-    let command = "";
-    let cursor = 0;
-
-    const count = (substring: string, y: number, offset: number = 0) => {
-      // Ignore empty lines
-      if (substring === "") {
+    this.terminal.onRender((data: any) => {
+      // when the screen is cleared, then we only want to update the buffer index, since
+      // there might be text in the prompt already
+      if (this.screenWasCleared) {
+        this.prompt.bufferIndex = this.getActiveLineNumber();
+        this.screenWasCleared = false;
         return;
       }
 
-      command += substring + "\n";
-      // If we haven't reached the row of the cursor, add the length of the substring
-      if (y < this.term!.buffer.cursorY) {
-        cursor += substring.length + 1;
+      // we update the prompt in the case that a full-screen app was just quit, which renders
+      // the entire terminal, or when the update variable is set. creating a multi-line command
+      // at the end of the terminal also renders the entire screen, but we don't want to update
+      // the prompt in that case, because the buffer index is the same; to detect this case,
+      // we can just check if the active line is wrapped.
+      if (
+        (data.start == 0 &&
+          data.end == this.terminal.rows - 1 &&
+          !this.buffer().getLine(this.getActiveLineNumber()).isWrapped) ||
+        this.updateOnRender
+      ) {
+        this.updatePrompt();
       }
+    });
 
-      // If we're on the row of the cursor, add up to the column of the cursor, minus the offset
-      if (y === this.term!.buffer.cursorY) {
-        cursor += this.term!.buffer.cursorX - offset;
+    // when any key is pressed, we want to stop updating the prompt, but clearing the screen
+    // is handled separately (see above).
+    this.terminal.onKey((key: any) => {
+      if (key.domEvent.key == "l" && key.domEvent.ctrlKey) {
+        this.screenWasCleared = true;
+        return;
+      } else {
+        this.updateOnRender = false;
       }
+    });
+
+    // when a line feed is received, update the active prompt on the next render call
+    this.terminal.onLineFeed(() => {
+      this.updateOnRender = true;
+    });
+
+    setTimeout(() => {
+      this.updatePrompt();
+    }, 200);
+  }
+
+  private buffer() {
+    return this.terminal.buffer.active ? this.terminal.buffer.active : this.terminal.buffer;
+  }
+
+  private getActiveLine(): string {
+    // to get the contents of the active line, we need to merge all wrapped lines upwards
+    const buffer = this.buffer();
+    let i = this.getActiveLineNumber();
+    let line = buffer.getLine(i).translateToString().trimRight();
+    while (i > 0 && buffer.getLine(i).isWrapped) {
+      line = buffer.getLine(i - 1).translateToString() + line;
+      i--;
+    }
+
+    return line;
+  }
+
+  private getActiveLineNumber(): number {
+    // the active line is the bottom-most line that is either wrapped or not entirely whitespace
+    const buffer = this.buffer();
+    for (let i = buffer.length - 1; i >= 0; i--) {
+      if (
+        buffer.getLine(i).isWrapped ||
+        !/^\s*$/.test(buffer.getLine(i).translateToString().trimRight())
+      ) {
+        return i;
+      }
+    }
+
+    return 0;
+  }
+
+  private updatePrompt() {
+    // keep track of the absolute horizontal and vertical offsets of the cursor, so we can
+    // separate the command being entered from the shell prompt.
+    this.prompt = {
+      prefix: this.getActiveLine(),
+      offsetLeft: this.buffer().cursorX,
+      bufferIndex: this.getActiveLineNumber(),
     };
+  }
 
-    // Look at every row in the buffer
-    for (let i = 0; i < this.term!.buffer.length; i++) {
-      const currentLine = this.term!.buffer.getLine(i)?.translateToString().trimRight() || "";
-      // If this line is the same as before, skip
-      if (currentLine === this.preCommandBuffer[i]) {
-        continue;
-      }
+  scrollDown() {
+    this.terminal.scrollPages(1);
+  }
 
-      let substring = currentLine;
-      let offset = 0;
+  scrollUp() {
+    this.terminal.scrollPages(-1);
+  }
 
-      // Compare to the previous buffer to get a substring and offset
-      if (this.preCommandBuffer[i]) {
-        for (let j = 0; j < this.preCommandBuffer[i].length; j++) {
-          if (currentLine[j] !== this.preCommandBuffer[i][j]) {
-            substring = currentLine.substring(j);
-            offset = j;
-            break;
-          }
-        }
-      }
-
-      count(substring, i, offset);
-    }
-
-    this.command = command;
-    this.cursor = cursor;
-  };
-
-  private savePreviousState = () => {
-    this.preCommandBuffer = [];
-    for (let i = 0; i < this.term!.buffer.length; i++) {
-      this.preCommandBuffer.push(this.term!.buffer.getLine(i)?.translateToString() || "");
-    }
-  };
+  state(): { source: string; cursor: number } {
+    return {
+      source: this.getActiveLine().substring(this.prompt.offsetLeft),
+      cursor:
+        this.terminal.cols * (this.getActiveLineNumber() - this.prompt.bufferIndex) +
+        this.buffer().cursorX -
+        this.prompt.offsetLeft,
+    };
+  }
 }
