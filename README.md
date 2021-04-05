@@ -2,8 +2,11 @@
 
 ## Installation
 
-1. Download and install Hyper 3.1.1 from https://github.com/serenadeai/serenade-hyper/releases.
-    - This version of Hyper contains a newer version of xterm.js, and it will be released by the Hyper team soon! In the meantime, you can use the above builds.
+1. Download and install Hyper 3.1.1. Serenade's Hyper plugin will _not_ work on versions below 3.1.0!
+    - macOS: https://cdn.serenade.ai/hyper/Hyper-3.1.1-serenade.dmg
+    - Windows: https://cdn.serenade.ai/hyper/Hyper%20Setup%203.1.1-serenade.exe
+    - Linux: https://cdn.serenade.ai/hyper/Hyper-3.1.1-serenade.AppImage
+    - This version of Hyper contains a newer version of xterm.js, and it will be released by the Hyper team soon! Until then, you can use the above Serenade-provided builds.
 1. Launch Hyper, then use the menu item Plugins > Update to automatically download the Serenade plugin.
 1. Restart Hyper to make sure Serenade is loaded.
 
