@@ -37,6 +37,12 @@ On Windows, you might want to change Hyper's configuration file to point to your
 1. Run `yarn` to get dependencies, then `yarn watch` to build.`
 1. Optionally, run `rm -rf ~/AppData/Roaming/Hyper/` to remove previously installed configuration and plugins.
 
+## Publishing
+
+1. Update the version number in `package.json`.
+1. Run `yarn` and `yarn build`.
+1. Run `npm publish`.
+
 ## Design
 
 ### Terminal, tty, shell
