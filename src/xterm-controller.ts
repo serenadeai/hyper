@@ -1,12 +1,12 @@
 interface Prompt {
   prefix: string;
   offsetLeft: number;
-  offsetRight: number;
-  bufferIndex: number;
+  offsetTop: number;
 }
 
 export default class XtermController {
-  private prompt: Prompt = { prefix: "", offsetLeft: 0, offsetRight: 0, bufferIndex: 0 };
+  private prompt: Prompt = { prefix: "", offsetLeft: 0, offsetTop: 0 };
+  private searching: boolean = false;
   private terminal: any;
   private uid: string;
   private updateOnRender: boolean = false;
@@ -21,10 +21,18 @@ export default class XtermController {
       // when the screen is cleared, then we only want to update the buffer index, since
       // there might be text in the prompt already
       if (this.screenWasCleared) {
-        this.prompt.bufferIndex = this.getActiveLineNumber();
+        this.prompt.offsetTop = this.buffer().viewportY + this.buffer().cursorY;
         this.screenWasCleared = false;
         return;
       }
+
+      const lastNonBlankLine = this.buffer().getLine(this.getLastNonBlankLineIndex());
+      const lastLineText = lastNonBlankLine.translateToString();
+      this.searching =
+        lastLineText.startsWith("(reverse-i-search)") ||
+        lastLineText.startsWith("(failed reverse-i-search)") ||
+        lastLineText.startsWith("bck-i-search") ||
+        lastLineText.startsWith("failing bck-i-search");
 
       // we update the prompt in the case that a full-screen app was just quit, which renders
       // the entire terminal, or when the update variable is set. creating a multi-line command
@@ -32,9 +40,7 @@ export default class XtermController {
       // the prompt in that case, because the buffer index is the same; to detect this case,
       // we can just check if the active line is wrapped.
       if (
-        (data.start == 0 &&
-          data.end == this.terminal.rows - 1 &&
-          !this.buffer().getLine(this.getActiveLineNumber()).isWrapped) ||
+        (data.start == 0 && data.end == this.terminal.rows - 1 && !lastNonBlankLine.isWrapped) ||
         this.updateOnRender
       ) {
         this.updatePrompt();
@@ -66,26 +72,11 @@ export default class XtermController {
     return this.terminal.buffer.active ? this.terminal.buffer.active : this.terminal.buffer;
   }
 
-  private getActiveLine(): string {
-    // to get the contents of the active line, we need to merge all wrapped lines upwards
-    const buffer = this.buffer();
-    let i = this.getActiveLineNumber();
-    let line = buffer.getLine(i).translateToString().trimRight();
-    while (i > 0 && buffer.getLine(i).isWrapped) {
-      line = buffer.getLine(i - 1).translateToString() + line;
-      i--;
-    }
-
-    return line;
-  }
-
-  private getActiveLineNumber(): number {
-    // the active line is the bottom-most line that is either wrapped or not entirely whitespace
-    const buffer = this.buffer();
-    for (let i = buffer.length - 1; i >= 0; i--) {
+  private getLastNonBlankLineIndex(): number {
+    for (let i = this.buffer().length - 1; i >= 0; i--) {
       if (
-        buffer.getLine(i).isWrapped ||
-        !/^\s*$/.test(buffer.getLine(i).translateToString().trimRight())
+        this.buffer().getLine(i).isWrapped ||
+        !/^\s*$/.test(this.buffer().getLine(i).translateToString().trimRight())
       ) {
         return i;
       }
@@ -95,25 +86,14 @@ export default class XtermController {
   }
 
   private updatePrompt() {
-    // keep track of the absolute horizontal and vertical offsets of the cursor, so we can
-    // separate the command being entered from the shell prompt.
-    let offsetRight = 0;
-    const line = this.getActiveLine();
-    if (!this.buffer().getLine(this.getActiveLineNumber()).isWrapped) {
-      for (let i = line.length - 1; i >= 0; i--) {
-        if (line[i] != " ") {
-          offsetRight++;
-        } else {
-          break;
-        }
-      }
-    }
+    const offsetLeft = this.buffer().cursorX;
+    const offsetTop = this.buffer().viewportY + this.buffer().cursorY;
+    const line = this.buffer().getLine(offsetTop).translateToString();
 
     this.prompt = {
-      prefix: line,
-      offsetLeft: this.buffer().cursorX,
-      offsetRight,
-      bufferIndex: this.getActiveLineNumber(),
+      prefix: line.substring(0, offsetLeft),
+      offsetLeft,
+      offsetTop,
     };
   }
 
@@ -126,20 +106,34 @@ export default class XtermController {
   }
 
   state(): { source: string; cursor: number } {
-    let line = this.getActiveLine();
-    const index = this.getActiveLineNumber();
-    if (!this.buffer().getLine(index).isWrapped && this.prompt.offsetRight > 0) {
-      line = line.substring(0, line.length - this.prompt.offsetRight).trimRight();
+    const cursorY = this.buffer().viewportY + this.buffer().cursorY;
+    let i = this.prompt.offsetTop;
+    let source = this.buffer().getLine(i).translateToString().substring(this.prompt.offsetLeft);
+
+    i++;
+    while (i < this.buffer().length && this.buffer().getLine(i).isWrapped) {
+      source += this.buffer().getLine(i).translateToString();
+      i++;
+    }
+
+    let cursor =
+      this.terminal.cols * (cursorY - this.prompt.offsetTop) +
+      this.buffer().cursorX -
+      this.prompt.offsetLeft;
+
+    let strippedSource = source.trimRight();
+    if (cursor > strippedSource.length) {
+      strippedSource += source.substring(strippedSource.length, cursor);
+    }
+
+    if (this.searching) {
+      strippedSource = "";
+      cursor = 0;
     }
 
     return {
-      source: line.substring(this.prompt.offsetLeft),
-      cursor: Math.max(
-        0,
-        this.terminal.cols * (this.getActiveLineNumber() - this.prompt.bufferIndex) +
-          this.buffer().cursorX -
-          this.prompt.offsetLeft
-      ),
+      source: strippedSource,
+      cursor,
     };
   }
 }
