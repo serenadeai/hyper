@@ -1,6 +1,6 @@
 {
   "name": "hyper-serenade",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Serenade for Hyper",
   "main": "build/main.js",
   "author": "Serenade",
