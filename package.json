@@ -5,6 +5,7 @@
   "main": "build/main.js",
   "author": "Serenade",
   "license": "MIT",
+  "keywords": ["hyper", "voice", "accessibility"],
   "scripts": {
     "build": "webpack --mode development",
     "watch": "webpack --mode development --watch"

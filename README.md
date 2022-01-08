@@ -1,20 +1,26 @@
 # Serenade for Hyper
 
+## Code with voice
+
+Serenade is the fastest and easiest way to write code with natural speech. Give your hands a break without missing a beat.
+
+Edit code, run terminal commands, and write documentation entirely with voice. Whether you have an injury or you’re looking to prevent one, Serenade can help you be just as productive without lifting a finger. Use voice alongside your existing workflow, or abandon your keyboard entirely.
+
+Learn more at [https://serenade.ai](https://serenade.ai).
+
+[![Serenade Demo](https://cdn.serenade.ai/img/develop-naturally.gif)](https://serenade.ai/)
+
 ## Installation
 
-1. Download and install Hyper 3.1.1. Serenade's Hyper plugin will _not_ work on versions below 3.1.0!
-    - macOS: https://cdn.serenade.ai/hyper/Hyper-3.1.1-serenade.dmg
-    - Windows: https://cdn.serenade.ai/hyper/Hyper%20Setup%203.1.1-serenade.exe
-    - Linux: https://cdn.serenade.ai/hyper/Hyper-3.1.1-serenade.AppImage
-    - This version of Hyper contains a newer version of xterm.js, and it will be released by the Hyper team soon! Until then, you can use the above Serenade-provided builds.
-1. Launch Hyper, then use the menu item Plugins > Update to automatically download the Serenade plugin.
-1. Restart Hyper to make sure Serenade is loaded.
+To use Serenade for Hyper, you'll also need the Serenade app, available for download [here](https://serenade.ai/download). Then, open your Hyper configuration file and add:
 
-### Windows
+    plugins: [
+      "hyper-serenade"
+    ]
 
-On Windows, you might want to change Hyper's configuration file to point to your shell with Edit > Preferences. The default configuration file will have examples in the comments above the `shell` entry. For example, to use Git Bash as you shell, you can do:
+## Getting Started
 
-    shell: 'C:\\Program Files\\Git\\bin\\bash.exe'
+Check out the [Serenade documentation](https://serenade.ai/docs) to learn how to set up and start using Serenade.
 
 ## Development
 
@@ -46,39 +52,3 @@ On Windows, you might want to change Hyper's configuration file to point to your
 1. Run `yarn` and `yarn build`.
 1. Run `npm publish`.
 
-## Design
-
-### Terminal, tty, shell
-
-A **terminal (emulator)** can be defined as a GUI program, like [Terminal](https://en.wikipedia.org/wiki/Terminal_(macOS)), [iTerm](https://iterm2.com/), or [Hyper](https://hyper.is/), that provides access to input/output with the operating system.
-
-In Unix, that access is accomplished via a **tty**, an interface provided by the operating system as a file (`/dev/tty{s}*` in Linux and macOS, indicated by the `tty` and `who` commands.)
-
-A **shell** is a program, like Bash or Zsh, "whose primary purpose is to start other programs" or enable more advanced scripting via commands, usually indicated by the `echo $SHELL` command.
-
-Source: [What is the exact difference between a 'terminal', a 'shell', a 'tty' and a 'console'?](https://unix.stackexchange.com/questions/4126/what-is-the-exact-difference-between-a-terminal-a-shell-a-tty-and-a-con)
-
-### Implementation
-
-#### Layout
-
-Since Hyper is written in TypeScript and its plugins are in TypeScript as well, this plugin is able to use a [shared package](https://github.com/serenadeai/editor-shared) as its foundation for IPC with the desktop client and dispatching commands.
-
-In `index.ts`, when a new Hyper tab is created, a new instance of the `CommandHandler` class is created, along with the IPC needed. Hyper exposes access to the underlying [xterm.js](https://github.com/xtermjs/xterm.js)'s `Terminal` object, which actually handles inputs and outputs. So whenever a new `Terminal` instance is detected, we attach our `XtermController` to that instance.
-
-##### CommandHandler
-
-`CommandHandler` currently supports:
-- `COMMAND_TYPE_GET_EDITOR_STATE`, which asks `XtermController` for the source (command) and cursor position
-
-## Other issues
-
-1. The escape key seems to be captured by Hyper: https://github.com/vercel/hyper/issues/3929. A workaround is to add this to the config, which is done automatically by our forked version in https://github.com/serenadeai/serenade-hyper:
-
-```
-  keymaps: {
-    // Example
-    // 'window:devtools': 'cmd+alt+o',
-    'editor:break': 'esc'
-  },
-```
